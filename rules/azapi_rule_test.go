@@ -63,6 +63,37 @@ func TestAzapiRule(t *testing.T) {
 			},
 		},
 		{
+			name: "string not present",
+			rule: NewAzApiRule("test", "https://example.com", "testType", "", "", "bat", false, false, []string{}),
+			content: `
+		resource "azapi_resource" "test" {
+		  type = "testType@0000-00-00"
+		  body = {
+			  foo = "fiz"
+				bar = "biz"
+			}
+		}`,
+			expected: helper.Issues{},
+		},
+		{
+			name: "string present but not expected",
+			rule: NewAzApiRule("test", "https://example.com", "testType", "", "", "foo", false, false, []string{}),
+			content: `
+		resource "azapi_resource" "test" {
+		  type = "testType@0000-00-00"
+		  body = {
+			  foo = "fiz"
+				bar = "biz"
+			}
+		}`,
+			expected: helper.Issues{
+				{
+					Rule:    NewAzApiRule("test", "https://example.com", "testType", "", "", "foo", false, false, []string{}),
+					Message: "The query `foo` returned data but no expected results are set",
+				},
+			},
+		},
+		{
 			name: "correct number",
 			rule: NewAzApiRule("test", "https://example.com", "testType", "", "", "foo", false, false, []string{"2"}),
 			content: `

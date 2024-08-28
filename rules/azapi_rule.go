@@ -117,6 +117,14 @@ func (r *AzApiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 			return fmt.Errorf("could not marshal cty value: %s", err)
 		}
 		queryResult := gjson.GetBytes(jsonbytes, "value."+r.query)
+		if queryResult.Exists() && len(r.expectedResults) == 0 {
+			runner.EmitIssue(
+				r,
+				fmt.Sprintf("The query `%s` returned data but no expected results are set", r.query),
+				bodyAttr.Range,
+			)
+			continue
+		}
 		if !queryResult.Exists() {
 			if r.mustExist {
 				runner.EmitIssue(
