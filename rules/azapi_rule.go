@@ -2,8 +2,10 @@ package rules
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/matt-FFFFFF/tflint-ruleset-azure-wellarchitectred/modulecontent"
@@ -128,7 +130,15 @@ func (r *AzapiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 			var expAny any
 			err := json.Unmarshal([]byte(exp), &expAny)
 			if err != nil {
-				return fmt.Errorf("could not unmarshal expected value: %s", err)
+				var syntaxError *json.SyntaxError
+				if !errors.As(err, &syntaxError) {
+					return fmt.Errorf("could not unmarshal expected value: %s", err)
+				}
+				exp2 := strconv.Quote(exp)
+				err = json.Unmarshal([]byte(exp2), &expAny)
+				if err != nil {
+					return fmt.Errorf("could not unmarshal expected value: %s", err)
+				}
 			}
 			if _, ok := expAny.([]any); ok {
 				expAny = expAny.([]any)
@@ -151,7 +161,7 @@ func (r *AzapiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 		} else {
 			for _, qr := range queryResult.Array() {
 				for _, exp := range expectedResultsAny {
-					var queryResultAny []any
+					var queryResultAny any
 					err := json.Unmarshal([]byte(qr.Raw), &queryResultAny)
 					if err != nil {
 						return fmt.Errorf("could not unmarshal query result: %s", err)
