@@ -15,63 +15,67 @@ import (
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
-// AzapiRule runs the specified gjson query on the `body` attribute of `azapi_resource` resources and checks if the result is as expected.
-type AzapiRule struct {
+// AzApiRule runs the specified gjson query on the `body` attribute of `azapi_resource` resources and checks if the result is as expected.
+type AzApiRule struct {
 	tflint.DefaultRule // Embed the default rule to reuse its implementation
-	apiVersion         string
 	expectedResults    []string
 	link               string
+	maximumApiVersion  string
+	minimumApiVersion  string
 	mustExist          bool
 	query              string
+	queryResultIsArray bool
 	resourceType       string
 	ruleName           string
 }
 
-var _ tflint.Rule = &AzapiRule{}
-var _ modulecontent.ContentFetcher = &AzapiRule{}
+var _ tflint.Rule = &AzApiRule{}
+var _ modulecontent.ContentFetcher = &AzApiRule{}
 
-// NewNewAzapiRule returns a new rule with the given resource type, attribute name, and expected values.
-func NewAzapiRule(ruleName, link, resourceType, apiVersion, query string, mustExist bool, expectedResults []string) *AzapiRule {
-	return &AzapiRule{
-		apiVersion:      apiVersion,
-		expectedResults: expectedResults,
-		link:            link,
-		mustExist:       mustExist,
-		query:           query,
-		resourceType:    resourceType,
-		ruleName:        ruleName,
+// AzApiRule returns a new rule.
+func NewAzApiRule(ruleName, link, resourceType, minimumApiVersion, maximumApiVersion, query string, mustExist, queryResultIsArray bool, expectedResults []string) *AzApiRule {
+	return &AzApiRule{
+		expectedResults:    expectedResults,
+		link:               link,
+		maximumApiVersion:  maximumApiVersion,
+		minimumApiVersion:  minimumApiVersion,
+		mustExist:          mustExist,
+		query:              query,
+		queryResultIsArray: queryResultIsArray,
+		resourceType:       resourceType,
+		ruleName:           ruleName,
 	}
 }
 
-func (r *AzapiRule) Link() string {
+func (r *AzApiRule) Link() string {
 	return r.link
 }
 
-func (r *AzapiRule) Enabled() bool {
+func (r *AzApiRule) Enabled() bool {
 	return true
 }
 
-func (r *AzapiRule) Severity() tflint.Severity {
+func (r *AzApiRule) Severity() tflint.Severity {
 	return tflint.ERROR
 }
 
-func (r *AzapiRule) Name() string {
+func (r *AzApiRule) Name() string {
 	return r.ruleName
 }
 
-func (r *AzapiRule) ResourceType() string {
+func (r *AzApiRule) ResourceType() string {
 	return "azapi_resource"
 }
 
-func (r *AzapiRule) Attributes() []string {
+func (r *AzApiRule) Attributes() []string {
 	return []string{"name", "type", "body"}
 }
 
-func (r *AzapiRule) Check(runner tflint.Runner) error {
+func (r *AzApiRule) Check(runner tflint.Runner) error {
 	return r.queryResource(runner, cty.DynamicPseudoType)
 }
 
-func (r *AzapiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
+func (r *AzApiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 	ctx, resources, diags := modulecontent.FetchResources(r, runner)
 	if diags.HasErrors() {
 		return fmt.Errorf("could not get partial content: %s", diags)
@@ -91,7 +95,7 @@ func (r *AzapiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 			return fmt.Errorf("could not evaluate type expression: %s", diags)
 		}
 		typeStr := typeVal.AsString()
-		if !checkAzApiType(typeStr, r.resourceType, r.apiVersion) {
+		if !checkAzApiType(typeStr, r.resourceType, r.minimumApiVersion, r.maximumApiVersion) {
 			continue
 		}
 		bodyAttr, bodyAttrExists := resource.Body.Attributes["body"]
@@ -124,53 +128,37 @@ func (r *AzapiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 			continue
 		}
 		var ok bool
-		var expectedIsArray bool
-		var expectedResultsAny []any
-		for _, exp := range r.expectedResults {
-			var expAny any
-			err := json.Unmarshal([]byte(exp), &expAny)
-			if err != nil {
-				var syntaxError *json.SyntaxError
-				if !errors.As(err, &syntaxError) {
-					return fmt.Errorf("could not unmarshal expected value: %s", err)
-				}
-				exp2 := strconv.Quote(exp)
-				err = json.Unmarshal([]byte(exp2), &expAny)
-				if err != nil {
-					return fmt.Errorf("could not unmarshal expected value: %s", err)
-				}
-			}
-			if _, ok := expAny.([]any); ok {
-				expAny = expAny.([]any)
-				expectedIsArray = true
-			}
-			expectedResultsAny = append(expectedResultsAny, expAny)
+		expectedResultsAny, err := expectedResultsToAny(r.expectedResults)
+		if err != nil {
+			return fmt.Errorf("could not convert expected results to any: %s", err)
 		}
-		if expectedIsArray {
-			for _, exp := range expectedResultsAny {
-				var queryResultAny []any
-				err := json.Unmarshal([]byte(queryResult.Raw), &queryResultAny)
-				if err != nil {
-					return fmt.Errorf("could not unmarshal query result: %s", err)
-				}
-				if reflect.DeepEqual(exp, queryResultAny) {
-					ok = true
-					break
-				}
+		if r.queryResultIsArray {
+			ok, err = validateResult(queryResult.Raw, expectedResultsAny)
+			if err != nil {
+				return fmt.Errorf("could not validate query result: %s", err)
+			}
+			if ok {
+				continue
 			}
 		} else {
-			for _, qr := range queryResult.Array() {
-				for _, exp := range expectedResultsAny {
-					var queryResultAny any
-					err := json.Unmarshal([]byte(qr.Raw), &queryResultAny)
-					if err != nil {
-						return fmt.Errorf("could not unmarshal query result: %s", err)
-					}
-					if reflect.DeepEqual(exp, queryResultAny) {
-						ok = true
-						break
-					}
+			if len(queryResult.Array()) == 1 {
+				ok, err = validateResult(queryResult.Raw, expectedResultsAny)
+				if err != nil {
+					return fmt.Errorf("could not validate query result: %s", err)
 				}
+				if ok {
+					continue
+				}
+			}
+			results := make([]bool, len(queryResult.Array()))
+			for i, qr := range queryResult.Array() {
+				results[i], err = validateResult(qr.Raw, expectedResultsAny)
+				if err != nil {
+					return fmt.Errorf("could not validate query result: %s", err)
+				}
+			}
+			if allTrue(results...) {
+				ok = true
 			}
 		}
 		if !ok {
@@ -185,13 +173,67 @@ func (r *AzapiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 	return nil
 }
 
-func checkAzApiType(gotType, wantResourceType, wantApiVersion string) bool {
+func checkAzApiType(gotType, wantResourceType, minimumApiVersion, maximumApiVersion string) bool {
 	gotSplit := strings.Split(gotType, "@")
+	if len(gotSplit) != 2 {
+		return false
+	}
 	if !strings.EqualFold(gotSplit[0], wantResourceType) {
 		return false
 	}
-	if wantApiVersion == "" || strings.EqualFold(gotSplit[1], wantApiVersion) {
-		return true
+	if minimumApiVersion != "" {
+		if gotSplit[1] < minimumApiVersion {
+			return false
+		}
 	}
-	return false
+	if maximumApiVersion != "" {
+		if gotSplit[1] > maximumApiVersion {
+			return false
+		}
+	}
+	return true
+}
+
+func validateResult(got string, want []any) (bool, error) {
+	var gotAny any
+	err := json.Unmarshal([]byte(got), &gotAny)
+	if err != nil {
+		return false, fmt.Errorf("could not unmarshal query result: %s", err)
+	}
+	for _, w := range want {
+		if reflect.DeepEqual(gotAny, w) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func expectedResultsToAny(in []string) ([]any, error) {
+	expectedResultsAny := make([]any, 0, len(in))
+	for _, exp := range in {
+		var expAny any
+		err := json.Unmarshal([]byte(exp), &expAny)
+		if err != nil {
+			var syntaxError *json.SyntaxError
+			if !errors.As(err, &syntaxError) {
+				return nil, fmt.Errorf("could not unmarshal expected value: %s", err)
+			}
+			exp2 := strconv.Quote(exp)
+			err = json.Unmarshal([]byte(exp2), &expAny)
+			if err != nil {
+				return nil, fmt.Errorf("could not unmarshal expected value: %s", err)
+			}
+		}
+		expectedResultsAny = append(expectedResultsAny, expAny)
+	}
+	return expectedResultsAny, nil
+}
+
+func allTrue(in ...bool) bool {
+	for _, b := range in {
+		if !b {
+			return false
+		}
+	}
+	return true
 }
