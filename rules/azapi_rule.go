@@ -30,7 +30,7 @@ type AzApiRule struct {
 }
 
 var _ tflint.Rule = &AzApiRule{}
-var _ modulecontent.ContentFetcher = &AzApiRule{}
+var _ modulecontent.BlockFetcher = &AzApiRule{}
 
 // AzApiRule returns a new rule.
 func NewAzApiRule(ruleName, link, resourceType, minimumApiVersion, maximumApiVersion, query string, mustExist, queryResultIsArray bool, expectedResults []string) *AzApiRule {
@@ -63,8 +63,16 @@ func (r *AzApiRule) Name() string {
 	return r.ruleName
 }
 
-func (r *AzApiRule) ResourceType() string {
+func (r *AzApiRule) LabelOne() string {
 	return "azapi_resource"
+}
+
+func (r *AzApiRule) LabelNames() []string {
+	return []string{"type", "name"}
+}
+
+func (r *AzApiRule) BlockType() string {
+	return "resource"
 }
 
 func (r *AzApiRule) Attributes() []string {
@@ -76,7 +84,7 @@ func (r *AzApiRule) Check(runner tflint.Runner) error {
 }
 
 func (r *AzApiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
-	ctx, resources, diags := modulecontent.FetchResources(r, runner)
+	ctx, resources, diags := modulecontent.FetchBlocks(r, runner)
 	if diags.HasErrors() {
 		return fmt.Errorf("could not get partial content: %s", diags)
 	}
