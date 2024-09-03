@@ -9,6 +9,8 @@ import (
 	"github.com/terraform-linters/tflint/terraform/addrs"
 )
 
+// AppFs is the virtual filesystem we use to that we can mock testing with the real Terraform evaluator,
+// bypassing the tflint test runner.
 var AppFs = afero.Afero{
 	Fs: afero.NewOsFs(),
 }
@@ -19,7 +21,7 @@ var AppFs = afero.Afero{
 type BlockFetcher interface {
 	BlockType() string    // The type of block to fetch, e.g. `resource`.
 	LabelOne() string     // The value of the first label of the block to fetch, e.g. `azapi_resource`.
-	LabelNames() []string // The labels of the block to fetch, e.g. `["type", "name"]` for Terrafrm resources.
+	LabelNames() []string // The labels of the block to fetch, e.g. `["type", "name"]` for Terraform resources.
 	Attributes() []string // The attributes to fetch from the block.
 }
 
@@ -121,6 +123,7 @@ func initEvaluator(runner tflint.Runner) (*terraform.Config, *terraform.Evaluato
 	return config, ctx, nil
 }
 
+// blocksWithPartialContent returns the blocks with the given resource type and the attribute if they exist.
 func blocksWithPartialContent(ctx *terraform.Evaluator, module *terraform.Module, bf BlockFetcher) (*hclext.BodyContent, hcl.Diagnostics) {
 	attrSchema := make([]hclext.AttributeSchema, 0, len(bf.Attributes()))
 	for _, attr := range bf.Attributes() {
