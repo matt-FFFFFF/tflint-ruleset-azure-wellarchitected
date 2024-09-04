@@ -41,13 +41,13 @@ func FetchBlocks(f BlockFetcher, runner tflint.Runner) (*terraform.Evaluator, []
 	if diags.HasErrors() {
 		return nil, nil, diags
 	}
-	blocks, diags := getResources(ctx, config.Module, f)
+	blocks, diags := blocksFilterByLabelOne(ctx, config.Module, f)
 
 	return ctx, blocks, diags
 }
 
-// getResources returns a slice of resources with the given resource type and the attribute if they exist.
-func getResources(ctx *terraform.Evaluator, module *terraform.Module, bf BlockFetcher) ([]*hclext.Block, hcl.Diagnostics) {
+// blocksFilterByLabelOne returns a slice of resources with the given resource type and the attribute if they exist.
+func blocksFilterByLabelOne(ctx *terraform.Evaluator, module *terraform.Module, bf BlockFetcher) ([]*hclext.Block, hcl.Diagnostics) {
 	resources, diags := blocksWithPartialContent(ctx, module, bf)
 	if diags.HasErrors() {
 		return nil, diags

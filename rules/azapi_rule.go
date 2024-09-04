@@ -29,6 +29,14 @@ var _ modulecontent.BlockFetcher = &AzApiRule{}
 // AzApiRule returns a new rule.
 func NewAzApiRule(ruleName, link, resourceType, minimumApiVersion, maximumApiVersion, query string, mustExist, queryResultIsArray bool, expectedResults []string) *AzApiRule {
 	return &AzApiRule{
+		BlockQueryRule: blockqueryrule.NewBlockQueryRule(
+			ruleName,
+			link,
+			"resource",
+			"azapi_resource",
+			[]string{"type", "name"},
+			"body",
+		),
 		expected:           expectedResults,
 		link:               link,
 		maximumApiVersion:  maximumApiVersion,
