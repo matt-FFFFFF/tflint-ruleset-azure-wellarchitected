@@ -4,48 +4,49 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/matt-FFFFFF/tflint-ruleset-azure-wellarchitectred/blockqueryrule"
-	"github.com/matt-FFFFFF/tflint-ruleset-azure-wellarchitectred/ctyquery"
+	"github.com/matt-FFFFFF/tflint-ruleset-azure-wellarchitectred/blockquery"
 	"github.com/matt-FFFFFF/tflint-ruleset-azure-wellarchitectred/modulecontent"
 	"github.com/terraform-linters/tflint-plugin-sdk/tflint"
+	"github.com/tidwall/gjson"
 	"github.com/zclconf/go-cty/cty"
 )
 
 // AzApiRule runs the specified gjson query on the `body` attribute of `azapi_resource` resources and checks if the result is as expected.
 type AzApiRule struct {
 	tflint.DefaultRule // Embed the default rule to reuse its implementation
-	blockqueryrule.BlockQueryRule
-
+	blockquery.BlockQuery
+	expected          []gjson.Result
 	maximumApiVersion string
 	minimumApiVersion string
-
-	resourceType string
-	ruleName     string
+	link              string
+	resourceType      string
+	ruleName          string
 }
 
 var _ tflint.Rule = &AzApiRule{}
 var _ modulecontent.BlockFetcher = &AzApiRule{}
 
 // AzApiRule returns a new rule.
-func NewAzApiRule(ruleName, link, resourceType, minimumApiVersion, maximumApiVersion, query string, mustExist, queryResultIsArray bool, expectedResults []string) *AzApiRule {
+func NewAzApiRule(
+	ruleName, link, resourceType, minimumApiVersion, maximumApiVersion, query string,
+	mustExist, queryResultIsArray bool,
+	expectedResults []gjson.Result,
+) *AzApiRule {
 	return &AzApiRule{
-		BlockQueryRule: blockqueryrule.NewBlockQueryRule(
-			ruleName,
-			link,
+		BlockQuery: blockquery.NewBlockQueryRule(
 			"resource",
 			"azapi_resource",
 			[]string{"type", "name"},
 			"body",
+			query,
+			blockquery.Exists,
 		),
-		expected:           expectedResults,
-		link:               link,
-		maximumApiVersion:  maximumApiVersion,
-		minimumApiVersion:  minimumApiVersion,
-		mustExist:          mustExist,
-		query:              query,
-		queryResultIsArray: queryResultIsArray,
-		resourceType:       resourceType,
-		ruleName:           ruleName,
+		expected:          expectedResults,
+		link:              link,
+		maximumApiVersion: maximumApiVersion,
+		minimumApiVersion: minimumApiVersion,
+		resourceType:      resourceType,
+		ruleName:          ruleName,
 	}
 }
 
