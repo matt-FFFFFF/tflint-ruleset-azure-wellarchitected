@@ -123,9 +123,13 @@ func (r *AzApiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 		if diags.HasErrors() {
 			return fmt.Errorf("could not evaluate body expression: %s", diags)
 		}
-		ok, msg, err := ctyquery.Query(val, ct, r.query, r.expectedResults, r.queryResultIsArray, r.mustExist)
+		qr, err := blockquery.Query(val, ct, r.Query)
 		if err != nil {
 			return fmt.Errorf("could not query value: %s", err)
+		}
+		ok, msg, err := r.CompareFunc(qr, r.expected...)
+		if err != nil {
+			return fmt.Errorf("could not compare values: %w", err)
 		}
 		if !ok {
 			runner.EmitIssue(
@@ -138,12 +142,12 @@ func (r *AzApiRule) queryResource(runner tflint.Runner, ct cty.Type) error {
 	return nil
 }
 
-func checkAzApiType(gotType, wantResourceType, minimumApiVersion, maximumApiVersion string) bool {
+func checkAzApiType(gotType, wantType, minimumApiVersion, maximumApiVersion string) bool {
 	gotSplit := strings.Split(gotType, "@")
 	if len(gotSplit) != 2 {
 		return false
 	}
-	if !strings.EqualFold(gotSplit[0], wantResourceType) {
+	if !strings.EqualFold(gotSplit[0], wantType) {
 		return false
 	}
 	if minimumApiVersion != "" {
