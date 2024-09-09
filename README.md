@@ -1,4 +1,5 @@
 # TFLint Ruleset Template
+
 [![Build Status](https://github.com/terraform-linters/tflint-ruleset-template/workflows/build/badge.svg?branch=main)](https://github.com/terraform-linters/tflint-ruleset-template/actions)
 
 This is a template repository for building a custom ruleset. You can create a plugin repository from "Use this template". See also [Writing Plugins](https://github.com/terraform-linters/tflint/blob/master/docs/developer-guide/plugins.md).
@@ -31,7 +32,7 @@ plugin "template" {
 }
 ```
 
-## Rules
+## Rule Templates
 
 |Name|Description|Severity|Enabled|Link|
 | --- | --- | --- | --- | --- |
@@ -45,13 +46,13 @@ plugin "template" {
 Clone the repository locally and run the following command:
 
 ```
-$ make
+make
 ```
 
 You can easily install the built plugin with the following:
 
 ```
-$ make install
+make install
 ```
 
 You can run the built plugin like the following:

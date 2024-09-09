@@ -26,20 +26,25 @@ type AzApiRule struct {
 var _ tflint.Rule = &AzApiRule{}
 var _ modulecontent.BlockFetcher = &AzApiRule{}
 
-// AzApiRule returns a new rule.
+// AzApiRule creates a rule to check the `body` attribute of `azapi_resource` resources.
+// The `query` parameter is a gjson query string to run against the `body` attribute.
+// The `compareFunc` parameter is a function to compare the result of the query with the expected results. E.g. `blockquery.IsOneOf`.
+// The `expectedResults` parameter is a list of expected results, use the `blockquery.New*Results` functions to create them.
+// The resource type is the first part of the `type` attribute of the resource, e.g. "Microsoft.Compute/virtualMachines" for VMs.
+// Use the `minimumApiVersion` and `maximumApiVersion` parameters to filter resources based on their API version.
 func NewAzApiRule(
 	ruleName, link, resourceType, minimumApiVersion, maximumApiVersion, query string,
-	mustExist, queryResultIsArray bool,
-	expectedResults []gjson.Result,
+	compareFunc blockquery.ResultCompareFunc,
+	expectedResults ...gjson.Result,
 ) *AzApiRule {
 	return &AzApiRule{
-		BlockQuery: blockquery.NewBlockQueryRule(
+		BlockQuery: blockquery.NewBlockQuery(
 			"resource",
 			"azapi_resource",
 			[]string{"type", "name"},
 			"body",
 			query,
-			blockquery.Exists,
+			compareFunc,
 		),
 		expected:          expectedResults,
 		link:              link,

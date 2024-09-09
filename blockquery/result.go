@@ -27,7 +27,10 @@ func NewResult(ty gjson.Type, val any) gjson.Result {
 	return res
 }
 
-func NewIntResults(vals ...int) []gjson.Result {
+// NewNumberResults creates results of type Number,
+// E.g. If you expect vales to be 1, 2, or 3 then use
+// NewNumberResults(1, 2, 3).
+func NewNumberResults(vals ...float64) []gjson.Result {
 	results := make([]gjson.Result, len(vals))
 	for i, val := range vals {
 		results[i] = NewResult(gjson.Number, val)
@@ -35,14 +38,9 @@ func NewIntResults(vals ...int) []gjson.Result {
 	return results
 }
 
-func NewFloatResults(vals ...float64) []gjson.Result {
-	results := make([]gjson.Result, len(vals))
-	for i, val := range vals {
-		results[i] = NewResult(gjson.Number, val)
-	}
-	return results
-}
-
+// NewStringResults creates results of type String,
+// E.g. If you expect vales to be "a", "b", or "c" then use
+// NewStringResults("a", "b", "c").
 func NewStringResults(vals ...string) []gjson.Result {
 	results := make([]gjson.Result, len(vals))
 	for i, val := range vals {
@@ -51,15 +49,23 @@ func NewStringResults(vals ...string) []gjson.Result {
 	return results
 }
 
-func NewTrueResults(vals ...bool) []gjson.Result {
-	return []gjson.Result{NewResult(gjson.True, true)}
+// NewTrueResult creates a result of type True.
+func NewTrueResult(vals ...bool) gjson.Result {
+	return NewResult(gjson.True, true)
 }
 
-func NewFalseResults(vals ...bool) []gjson.Result {
-	return []gjson.Result{NewResult(gjson.False, false)}
+// NewFalseResult creates a result of type False.
+func NewFalseResult(vals ...bool) gjson.Result {
+	return NewResult(gjson.False, false)
 }
 
-func NewJsonResults(vals ...any) []gjson.Result {
+// NewComplexResults creates results for complex types.
+//
+// E.g. If you expect vales to be an object: {"nested": "value"},
+// then use NewComplexResults(map[string]any{"nested": "value"}).
+//
+// If you want to compare a list, then use NewComplexResults([]any{1, 2, 3}).
+func NewComplexResults(vals ...any) []gjson.Result {
 	results := make([]gjson.Result, len(vals))
 	for i, val := range vals {
 		results[i] = NewResult(gjson.JSON, val)
