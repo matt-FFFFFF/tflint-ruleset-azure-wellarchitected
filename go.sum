@@ -76,8 +76,8 @@ github.com/terraform-linters/tflint-plugin-sdk v0.21.0 h1:RoorxuuWh1RuL09PWAmaCK
 github.com/terraform-linters/tflint-plugin-sdk v0.21.0/go.mod h1:f7ruoYh44RQvnZRxpWhn8JFkpEVlQFT8wC9MhIF0Rp4=
 github.com/terraform-linters/tflint-ruleset-template v0.0.0-20240710144647-5cfb63717be0 h1:bBlolYghXsMP0gZs/yrfvvb6ReYM8gjIbdqzWoPYARQ=
 github.com/terraform-linters/tflint-ruleset-template v0.0.0-20240710144647-5cfb63717be0/go.mod h1:bcVBjJLliH0YFx4lgR1yRHXh0AXPAEBDmOFqUsHdgaE=
-github.com/tidwall/gjson v1.17.3 h1:bwWLZU7icoKRG+C+0PNwIKC6FCJO/Q3p2pZvuP0jN94=
-github.com/tidwall/gjson v1.17.3/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
+github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
+github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
 github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
 github.com/tidwall/pretty v1.2.0/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=

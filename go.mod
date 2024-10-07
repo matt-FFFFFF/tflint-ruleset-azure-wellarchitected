@@ -10,7 +10,7 @@ require (
 	github.com/terraform-linters/tflint v0.53.0
 	github.com/terraform-linters/tflint-plugin-sdk v0.21.0
 	github.com/terraform-linters/tflint-ruleset-template v0.0.0-20240710144647-5cfb63717be0
-	github.com/tidwall/gjson v1.17.3
+	github.com/tidwall/gjson v1.18.0
 	github.com/zclconf/go-cty v1.15.0
 )
 
