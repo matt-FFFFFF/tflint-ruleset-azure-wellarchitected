@@ -3,7 +3,7 @@ module github.com/matt-FFFFFF/tflint-ruleset-azure-wellarchitectred
 go 1.23.1
 
 require (
-	github.com/hashicorp/hcl/v2 v2.22.0
+	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/prashantv/gostub v1.1.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.9.0
