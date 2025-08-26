@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.22.0
 	github.com/prashantv/gostub v1.1.0
 	github.com/spf13/afero v1.11.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.0
 	github.com/terraform-linters/tflint v0.53.0
 	github.com/terraform-linters/tflint-plugin-sdk v0.21.0
 	github.com/terraform-linters/tflint-ruleset-template v0.0.0-20240710144647-5cfb63717be0
